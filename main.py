@@ -10,6 +10,16 @@ class InstaTM(object):
         self.address_hashtags = address_hashtags
         self.address_edges = address_edges
         self.dict_values = {}
+        self.first_read()
+
+    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_in()
+    def REGISTER_NEW(self, **kwargs):
+        input_json = cherrypy.request.json
+        ip_address = input_json['ip']
+        info_json = self.get_info()
+        self.crawlers[ip_address] = info_json
+        return self.get_info()
 
     def take(self, n, iterable):
         """
@@ -61,7 +71,8 @@ class InstaTM(object):
     """Сохранить в CSV"""
     def get_info(self):
         return_var = self.take(100, iter(self.dict_values[6]))
-        """Удалить!!!!!!!!!!"""
+        for i in return_var:
+            self.dict_values[6].pop(i)
         return return_var
 
     def edges_change_count_value(self, source_hashtag, target_hashtag, count):
