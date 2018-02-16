@@ -117,14 +117,15 @@ def crawl(hashtag, prox):
     return counter, lst, camel_case_list
 
 
-def run(address, s):
+def run(address, s, my_ip):
     """
     Функция, вызываемая при запуске Crawler'а
     :param address:
     :param s:
     :return:
     """
-    r = s.post(address + "/REGISTER_NEW")
+    r = s.post(address + "/REGISTER_NEW", json = {"ip": str(my_ip)})
+    print(r.text)
     return json.loads((r.text))
 
 
@@ -141,10 +142,11 @@ def answer(address, s, return_json):
 
 
 if __name__ == '__main__':
+    counter_breaks = 0
     s = requests.Session()
-    address = 'http://127.0.0.1:8080'
+    address = 'http://127.0.0.1:9090'
     my_ip = socket.gethostbyname(socket.getfqdn())
-    json_answer = run(address, s)
+    json_answer = run(address, s, my_ip)
     proxy_list = iter(proxy_api())
     proxy = next(proxy_list)
     lang = 'ru'

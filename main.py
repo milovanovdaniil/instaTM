@@ -16,8 +16,10 @@ class InstaTM(object):
 
     @cherrypy.tools.json_out()
     @cherrypy.tools.json_in()
+    @cherrypy.expose
     def REGISTER_NEW(self, **kwargs):
         input_json = cherrypy.request.json
+        print(input_json)
         ip_address = input_json['ip']
         info_json = self.get_info()
         self.crawlers[ip_address] = info_json
@@ -25,6 +27,7 @@ class InstaTM(object):
 
     @cherrypy.tools.json_out()
     @cherrypy.tools.json_in()
+    @cherrypy.expose
     def RETURN_ANSWER(self, **kwargs):
         input_json = cherrypy.request.json
         ip_address = input_json['ip']
@@ -121,7 +124,7 @@ def start_server():
     """
     hashtag_address = r'F:\projects\instagram\Milovanov\instagram\new version\Data\ru\hashtags\hashtags_09_02_2018_17h15m.csv'
     edges_address = r'F:\projects\instagram\Milovanov\instagram\new version\Data\ru\edges\edges_09_02_2018_17h15m.csv'
-    cherrypy.tree.mount(InstaTM(hashtag_address, ), '/')
+    cherrypy.tree.mount(InstaTM(hashtag_address, edges_address), '/')
     cherrypy.config.update({'server.socket_port': 9090}) #Порт
     cherrypy.engine.start()
 
