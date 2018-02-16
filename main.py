@@ -3,6 +3,7 @@ import pandas as pd
 from itertools import islice
 from datetime import datetime
 
+
 @cherrypy.expose
 class InstaTM(object):
     def __init__(self, address_hashtags, address_edges):
@@ -35,6 +36,7 @@ class InstaTM(object):
         info_json = self.get_info()
         self.crawlers[ip_address] = info_json
         return info_json
+
     def take(self, n, iterable):
         """
         Return first n items of the iterable as a list
@@ -55,6 +57,7 @@ class InstaTM(object):
         else:
             self.dict_values[max(self.dict_values.keys()) + 1] = self.pandas_to_dict(max(self.dict_values.keys()) + 1,
                                                                                      tail=False)
+
     def pandas_to_dict(self, index, tail=True):
         dict_pandas = {}
         if tail:
@@ -87,18 +90,19 @@ class InstaTM(object):
         self.to_csv()
 
     def to_csv(self):
-        self.df.to_csv('Data/ru/hashtags/hashtags_{}.csv'.format(
+        self.df.to_csv(r'F:\projects\instagram\Milovanov\instagram\new version\Data\ru\hashtags\hashtags_{}.csv'.format(
             datetime.now().strftime('%d_%m_%Y_%Hh%Mm')), sep=';',
             encoding='utf-8')
-        self.edges_df.to_csv('Data/ru/edges/edges_{}.csv'.format(
+        self.edges_df.to_csv(r'F:\projects\instagram\Milovanov\instagram\new version\Data\ru\edges\edges_{}.csv'.format(
             datetime.now().strftime('%d_%m_%Y_%Hh%Mm')), sep=';',
             encoding='utf-8')
-        self.camel_case_df.to_csv('Data/ru/camel_case/camel_{}.csv'.format(
-            datetime.now().strftime('%d_%m_%Y_%Hh%Mm')), sep=';',
+        self.camel_case_df.to_csv(
+            r'F:\projects\instagram\Milovanov\instagram\new version\Data\ru\camel_case\camel{}.csv'.format(
+                datetime.now().strftime('%d_%m_%Y_%Hh%Mm')), sep=';',
             encoding='utf-8')
 
     def get_info(self):
-        return_var = self.take(100, iter(self.dict_values[6]))
+        return_var = self.take(50, iter(self.dict_values[6]))
         for i in return_var:
             self.dict_values[6].pop(i)
         return return_var
@@ -125,7 +129,7 @@ def start_server():
     hashtag_address = r'F:\projects\instagram\Milovanov\instagram\new version\Data\ru\hashtags\hashtags_09_02_2018_17h15m.csv'
     edges_address = r'F:\projects\instagram\Milovanov\instagram\new version\Data\ru\edges\edges_09_02_2018_17h15m.csv'
     cherrypy.tree.mount(InstaTM(hashtag_address, edges_address), '/')
-    cherrypy.config.update({'server.socket_port': 9090}) #Порт
+    cherrypy.config.update({'server.socket_port': 9090})  # Порт
     cherrypy.engine.start()
 
 

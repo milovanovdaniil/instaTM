@@ -125,7 +125,6 @@ def run(address, s, my_ip):
     :return:
     """
     r = s.post(address + "/REGISTER_NEW", json = {"ip": str(my_ip)})
-    print(r.text)
     return json.loads((r.text))
 
 
