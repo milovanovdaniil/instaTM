@@ -1,22 +1,27 @@
 import requests
 import json
 import re
-from datetime import datetime
-import pandas as pd
+import socket
 
 def condition_lang(hashtag, lang):
+    """
+    Проверка принадлежности хэштега к языку
+    :param hashtag: сам хэштег
+    :param lang: язык
+    :return ret_bool: Принадлежит хэштег языку, или нет
+    """
     ret_bool = True
-    if lang=='ru':
+    if lang == 'ru':
         for i in hashtag.lower():
-            if 1072<=ord(i)<=1103 or 32<ord(i)<=64:
-                ret_bool=True
+            if 1072 <= ord(i) <= 1103 or 32 < ord(i) <= 64:
+                ret_bool = True
             else:
                 ret_bool = False
                 break
     else:
         for i in hashtag.lower():
-            if 97<=ord(i)<=122 or 32<ord(i)<=64:
-                ret_bool=True
+            if 97 <= ord(i) <= 122 or 32 < ord(i) <= 64:
+                ret_bool = True
             else:
                 ret_bool = False
                 break
@@ -26,22 +31,27 @@ def condition_lang(hashtag, lang):
 def proxy_api():
     """
     получение списка proxy
-    :return:
+    :return proxy_lst: возвращает список прокси
     """
     api_address = r'http://api.foxtools.ru/v2/Proxy'
     req_api = requests.get(api_address)
     d = json.loads(req_api.text)
     proxy_lst = []
-    dict_types = {1:'http', 2:'https'}
+    dict_types = {1: 'http', 2: 'https'}
     for item in d['response']['items']:
         try:
             proxy_lst.append({dict_types[item['type']]: f"{dict_types[item['type']]}://{item['ip']}:{item['port']}"})
-        except:
+        except Exception:
             pass
     return proxy_lst
 
 
 def condition_camel_case(hashtag):
+    """
+    Возвращает True, если хэштег написан CamelCase'ом, иначе False
+    :param hashtag:
+    :return:
+    """
     if hashtag.lower() != hashtag:
         return True
     else:
@@ -49,6 +59,12 @@ def condition_camel_case(hashtag):
 
 
 def get_edges(all_posts, hashtag):
+    """
+    Возвращает список со связями и список CamelCase хэштегов
+    :param all_posts: список постов с хэштегом
+    :param hashtag:
+    :return:
+    """
     global counter_breaks
     global lang
     patter = re.compile(r'#[\d\w]+\b')  # паттерн для поиска хештегов
@@ -65,14 +81,20 @@ def get_edges(all_posts, hashtag):
                     if condition_lang(j.lower(), lang):
                         di[j] = di.get(j.lower(), 0) + 1
 
-        except:
-            counter_breaks+=1
+        except Exception:
+            counter_breaks += 1
     for i in di:
-        lst.append({'Source':hashtag, 'Target': i, 'Count': di[i]})
+        lst.append({'Source': hashtag, 'Target': i, 'Count': di[i]})
     return lst, camel_case_list
 
 
 def get_info(hashtag, proxy):
+    """
+    Возвращает список постов по хэштегу
+    :param hashtag:
+    :param proxy:
+    :return:
+    """
     address = f'https://www.instagram.com/explore/tags/{hashtag[1:]}/?__a=1'
     r = requests.get(address, proxies=proxy)
     json_req = json.loads(r.text)
@@ -84,24 +106,44 @@ def get_info(hashtag, proxy):
 
 
 def crawl(hashtag, prox):
+    """
+    Получение всей информации по хэштегу
+    :param hashtag:
+    :param prox:
+    :return:
+    """
     counter, all_posts = get_info(hashtag, prox)
     lst, camel_case_list = get_edges(all_posts, hashtag)
     return counter, lst, camel_case_list
 
 
 def run(address, s):
-    r = s.post(address+"/REGISTER_NEW")
+    """
+    Функция, вызываемая при запуске Crawler'а
+    :param address:
+    :param s:
+    :return:
+    """
+    r = s.post(address + "/REGISTER_NEW")
     return json.loads((r.text))
 
 
 def answer(address, s, return_json):
-    r = s.post(address+"/RETURN_ANSWER", json=return_json)
+    """
+    Функция, возвращающая ответ TaskManager'у
+    :param address:
+    :param s:
+    :param return_json:
+    :return:
+    """
+    r = s.post(address + "/RETURN_ANSWER", json=return_json)
     return json.loads(r.text)
 
 
 if __name__ == '__main__':
     s = requests.Session()
     address = 'http://127.0.0.1:8080'
+    my_ip = socket.gethostbyname(socket.getfqdn())
     json_answer = run(address, s)
     proxy_list = iter(proxy_api())
     proxy = next(proxy_list)
@@ -117,5 +159,5 @@ if __name__ == '__main__':
             counter, lst, camel_case_list = crawl(i, proxy)
             return_json[i] = {'counter': counter,
                               'edges': lst}
-            final_json = {"normal": return_json, "camel_case": camel_case_list}
+        final_json = {"ip": my_ip, "normal": return_json, "camel_case": camel_case_list}
         json_answer = answer(address, s, final_json)
