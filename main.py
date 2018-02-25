@@ -8,6 +8,7 @@ from datetime import datetime
 class InstaTM(object):
     def __init__(self, address_hashtags, address_edges):
         self.json_param = {1: 2, 3: 4}
+        self.amount_of_dicts = 6  #Количество элементов в словаре с "хвостами"
         self.crawlers = {}
         self.address_hashtags = address_hashtags
         self.address_edges = address_edges
@@ -19,6 +20,11 @@ class InstaTM(object):
     @cherrypy.tools.json_in()
     @cherrypy.expose
     def REGISTER_NEW(self, **kwargs):
+        """
+        Ссылка регистрации краулера
+        :param kwargs:
+        :return:
+        """
         input_json = cherrypy.request.json
         print(input_json)
         ip_address = input_json['ip']
@@ -30,6 +36,11 @@ class InstaTM(object):
     @cherrypy.tools.json_in()
     @cherrypy.expose
     def RETURN_ANSWER(self, **kwargs):
+        """
+        Ссылка получения ответа и возвращения новой задачи
+        :param kwargs:
+        :return:
+        """
         input_json = cherrypy.request.json
         ip_address = input_json['ip']
         self.write_info(input_json)
@@ -47,11 +58,20 @@ class InstaTM(object):
         return list(islice(iterable, n))
 
     def first_read(self):
+        """
+        Метод при запуске программы
+        :return:
+        """
         self.df = pd.read_csv(self.address_hashtags, sep=';')
         self.edges_df = pd.read_csv(self.address_edges, sep=';')
-        self.write_pandas_to_dict(6)
+        self.write_pandas_to_dict(self.amount_of_dicts)
 
     def write_pandas_to_dict(self, index):
+        """
+        Генерация словаря с "хвостами"
+        :param index:
+        :return:
+        """
         for i in range(1, index):
             self.dict_values[i] = self.pandas_to_dict(i)
         else:
@@ -59,6 +79,13 @@ class InstaTM(object):
                                                                                      tail=False)
 
     def pandas_to_dict(self, index, tail=True):
+        """
+        Генерация одного словаря для словаря с хвостами.
+        :param index:
+        :param tail: True - НЕ последний словарь в словаре с хвостами, False - Последний словарь (наибольший элемент
+        словаря и больше)
+        :return:
+        """
         dict_pandas = {}
         if tail:
             for i, row in self.edges_df.loc[self.edges_df['Count'] == index][['Count',
@@ -77,6 +104,11 @@ class InstaTM(object):
         return dict_pandas
 
     def write_info(self, json_answer):
+        """
+        Записывает информацию, полученную от краулера
+        :param json_answer:
+        :return:
+        """
         for k, v in json_answer['normal'].items():
             self.df = self.df.append(pd.DataFrame([{'ID': self.df.max()['ID'] + 1,
                                                     'Hashtag': k, 'Count': v['counter']}]),
@@ -90,6 +122,10 @@ class InstaTM(object):
         self.to_csv()
 
     def to_csv(self):
+        """
+        Сохраняет информацию в csv
+        :return:
+        """
         self.df.to_csv(r'F:\projects\instagram\Milovanov\instagram\new version\Data\ru\hashtags\hashtags_{}.csv'.format(
             datetime.now().strftime('%d_%m_%Y_%Hh%Mm')), sep=';',
             encoding='utf-8')
@@ -102,18 +138,34 @@ class InstaTM(object):
             encoding='utf-8')
 
     def get_info(self):
+        """
+        Возвращает n элементов из словаря с "хвостами" для выдачи задачи (ЧИСЛО 50)
+        :return:
+        """
         return_var = self.take(50, iter(self.dict_values[6]))
         for i in return_var:
             self.dict_values[6].pop(i)
         return return_var
 
     def edges_change_count_value(self, source_hashtag, target_hashtag, count):
+        """
+        Изменение столбца Count в DataFrame edges_df
+        :param source_hashtag:
+        :param target_hashtag:
+        :param count:
+        :return:
+        """
         df_for_def = self.edges_df.loc[
             ((self.edges_df['Source'] == source_hashtag) & (self.edges_df['Target'] == target_hashtag)) |
             ((self.edges_df['Source'] == target_hashtag) & (self.edges_df['Target'] == source_hashtag))]
         self.edges_df.set_value(df_for_def.index[0], 'Count', df_for_def['Count'][1] + count)
 
     def edges_df_append(self, list_):
+        """
+        Добавление новых элементов в dataframe со связями
+        :param list_:
+        :return:
+        """
         for i in list_:
             try:
                 self.edges_change_count_value(i['Source'], i['Target'], i['Count'])

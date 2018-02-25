@@ -1,7 +1,7 @@
 import requests
 import json
 import re
-import socket
+import cherrypy
 
 def condition_lang(hashtag, lang):
     """
@@ -141,24 +141,32 @@ def answer(address, s, return_json):
 
 
 if __name__ == '__main__':
-    counter_breaks = 0
-    s = requests.Session()
-    address = 'http://127.0.0.1:9090'
-    my_ip = socket.gethostbyname(socket.getfqdn())
-    json_answer = run(address, s, my_ip)
-    proxy_list = iter(proxy_api())
-    proxy = next(proxy_list)
-    lang = 'ru'
-    while True:
-        return_json = {}
-        try:
-            proxy = next(proxy_list)
-        except StopIteration:
-            proxy_list = iter(proxy_api())
-            proxy = next(proxy_list)
-        for i in json_answer:
-            counter, lst, camel_case_list = crawl(i, proxy)
-            return_json[i] = {'counter': counter,
-                              'edges': lst}
-        final_json = {"ip": my_ip, "normal": return_json, "camel_case": camel_case_list}
-        json_answer = answer(address, s, final_json)
+    class Crawler(object):
+        counter_breaks = 0
+        s = requests.Session()
+        address = 'http://127.0.0.1:9090'
+
+        #Изменение порта
+        port = 8099
+        cherrypy.config.update({'server.socket_port': port})
+        my_ip = f'http://127.0.0.1:{port}'
+
+        json_answer = run(address, s, my_ip)
+        proxy_list = iter(proxy_api())
+        proxy = next(proxy_list)
+        lang = 'ru'
+        while True:
+            return_json = {}
+            try:
+                proxy = next(proxy_list)
+            except StopIteration:
+                proxy_list = iter(proxy_api())
+                proxy = next(proxy_list)
+            for i in json_answer:
+                counter, lst, camel_case_list = crawl(i, proxy)
+                return_json[i] = {'counter': counter,
+                                  'edges': lst}
+            final_json = {"ip": my_ip, "normal": return_json, "camel_case": camel_case_list}
+            json_answer = answer(address, s, final_json)
+
+    cherrypy.quickstart(Crawler())
